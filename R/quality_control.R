@@ -1,10 +1,11 @@
-quality_control <- function(sequences, qualities, min_quality = 20) {
-  good_quality_indices <- sapply(qualities, function(q) {
-    mean(as.integer(charToRaw(q)) - 33) >= min_quality
-  })
-
+quality_control <- function(data, min_quality = 20, min_length = 50) {
+  qc_passed <- mapply(function(seq, qual) {
+    qual_scores <- as.integer(charToRaw(qual)) - 33
+    mean(qual_scores) >= min_quality && nchar(seq) >= min_length && all(qual_scores >= min_quality)
+  }, data$sequences, data$qualities, SIMPLIFY = TRUE)
+  
   list(
-    sequences = sequences[good_quality_indices],
-    qualities = qualities[good_quality_indices]
+    sequences = data$sequences[qc_passed],
+    qualities = data$qualities[qc_passed]
   )
 }
