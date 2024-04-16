@@ -1,18 +1,17 @@
-build_contact_matrix <- function(sam_path, resolution = 1e6) {
-  # 这里使用伪代码展示基本思路，实际实现需要依赖于如Bioconductor的GenomicRanges包
-
-  # 读取SAM文件，解析比对位置
-  # 这里省略了读取和解析SAM文件的代码
-  reads <- read_sam(sam_path) # 假设这个函数可以解析SAM文件并返回比对位置
-
-  # 根据分辨率将基因组分割成bin
-  bins <- split_genome_by_resolution(genome_size, resolution)
-
-  # 分配读段到bin
-  contacts <- assign_reads_to_bins(reads, bins)
-
-  # 构建接触矩阵
-  contact_matrix <- calculate_contact_matrix(contacts)
-
-  contact_matrix
+build_contact_matrix <- function(bam_path, resolution = 1e6) {
+  library(GenomicRanges)
+  library(Rsamtools)
+  
+  # 读取BAM文件
+  param <- ScanBamParam(what = c("rname", "pos"))
+  bam_data <- scanBam(bam_path, param = param)
+  reads <- bam_data[[1]]
+  
+  # 使用分辨率创建bins
+  bins <- cut(reads$pos, breaks = seq(0, max(reads$pos), by = resolution), labels = FALSE, include.lowest = TRUE)
+  
+  # 构建稀疏接触矩阵
+  contact_matrix <- Matrix::sparseMatrix(i = bins, j = bins, x = rep(1, length(bins)), dims = c(max(bins), max(bins)))
+  
+  return(contact_matrix)
 }
