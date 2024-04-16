@@ -34,3 +34,19 @@ read_fastq_data <- function(fastq_path) {
   list(sequences = sequences, qualities = qualities)
 }
 
+library(BiocParallel)
+
+read_fastq_data_parallel <- function(fastq_paths) {
+  read_single_fastq <- function(path) {
+    if (!file.exists(path)) {
+      stop("FASTQ file does not exist: ", path)
+    }
+    req <- readLines(path)
+    list(
+      sequences = req[seq(2, length(req), 4)],
+      qualities = req[seq(4, length(req), 4)]
+    )
+  }
+  
+  bplapply(fastq_paths, read_single_fastq, BPPARAM = MulticoreParam(workers = 4))
+}
